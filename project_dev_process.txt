@@ -1,0 +1,60 @@
+
+# Project Development Process
+
+First, I started by creating a folder in my home directory called **Crypto-toolkit**.
+
+Then, I created a Bash script inside the folder and named it **crypto-toolkit.sh**. I started by making the script display the main menu for my Cryptography Toolkit.
+
+After that, I made the script executable and ran it to make sure it was working correctly.
+
+Next, I made the menu accept user input by using the **`read -p`** command. The `-p` allows me to display a prompt and receive input from the user.
+
+After setting up the menu, I started building the main functions of the toolkit. I used **functions and if statements** to control what happens when the user selects each option from the menu.
+
+I then added the different cryptography operations, such as symmetric encryption, symmetric decryption, key generation, asymmetric encryption and decryption, hashing, and digital signatures. I used OpenSSL commands to perform these cryptography operations.
+
+I also added **file checking and error handling** to make the program more reliable. For example, I used:
+
+```bash
+if [ ! -f "$input_file" ]; then
+```
+
+Here, **`-f`** checks whether the value is a regular file, while **`!`** means **"not."**
+
+Therefore, **`! -f "$input_file"`** means:
+
+> "If the input file does not exist as a regular file, then..."
+
+I used this to prevent the program from trying to work with a file that does not exist.
+
+I also used:
+
+```bash
+if [ -f "$output_file" ]; then
+```
+
+Here, **`-f`** checks whether the output file already exists as a regular file.
+
+This allows the program to detect an existing file before creating or overwriting another file.
+
+I also used **error handling** to check whether commands were successful. For example:
+
+```bash
+if [ $? -ne 0 ]; then
+```
+
+This checks whether the previous command was unsuccessful.
+
+Here, **`$?`** represents the exit status of the previous command.
+
+**`0`** means the command was successful.
+
+**`-ne`** means **"not equal to."**
+
+Therefore, **`$? -ne 0`** means:
+
+> "If the previous command was not successful, then..."
+
+The `then` tells Bash what action to take when the condition is true.
+
+These checks helped me make the toolkit detect errors, check whether files exist, and display an appropriate message instead of continuing as if everything worked correctly.
