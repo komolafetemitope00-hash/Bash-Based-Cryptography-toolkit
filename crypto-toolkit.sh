@@ -1,308 +1,303 @@
- 
+
+
 #!/bin/bash
-
-symmetric_encrypt() {
-
-echo "= Symmetric Encryption ="
-
-	read -p "Enter the file to encrypt: " input_file
-
-if [ ! -f "$input_file" ]; then
-	echo "Error: File does not exist."
-	return
-fi
-
-	read -p "Enter the file for the encrypted file: " output_file
-
-	if openssl enc -aes-256-cbc -pbkdf2 -iter 1000 -in "$input_file" -out "$output_file"; then
-
-	echo "Encryption successful."
-	echo "Encrypted file: $output_file"
-else
-	echo "Encryption failed."
-fi
-
-}
-
-
-
-symmetric_decrypt() {
-
-echo "= Symmetric Decryption ="
-
-        read -p "Enter the file to decrypt: " input_file
-
-if [ ! -f "$input_file" ]; then
-        echo "Error: File does not exist."
-        return
-fi
-
-        read -p "Enter the file for the decrypted file: " output_file
-
-        if openssl enc -d -aes-256-cbc -pbkdf2 -iter 1000 -in "$input_file" -out "$output_file"; then
-
-        echo "Decryption successful."
-        echo "Decrypted file: $output_file"
-else
-        echo "Decryption failed."
-fi
-
-}
-
-
-generate_keys() {
-    echo "== GENERATE PUBLIC/PRIVATE KEYS =="
-
-    read -p "Enter the name for the private key: " private_key
-    read -p "Enter the name for the public key: " public_key
-
-    if [ -e "$private_key" ]; then
-        echo "Error: Private key file already exists."
-        return
-    fi
-
-    if [ -e "$public_key" ]; then
-        echo "Error: Public key file already exists."
-        return
-    fi
-
-    openssl genrsa -out "$private_key" 2048
-
-    if [ $? -ne 0 ]; then
-        echo "Error: Private key generation failed."
-        return
-    fi
-
-    openssl rsa -in "$private_key" -pubout -out "$public_key"
-
-    if [ $? -eq 0 ]; then
-        echo "Keys generated successfully."
-        echo "Private key: $private_key"
-        echo "Public key: $public_key"
-    else
-        echo "Error: Public key generation failed."
-    fi
-}
-
-
-asymmetric_encrypt() {
-    echo "========== ASYMMETRIC ENCRYPTION =========="
-
-    read -p "Enter the file to encrypt: " input_file
-
-    if [ ! -f "$input_file" ]; then
-        echo "Error: File does not exist."
-        return
-    fi
-
-    read -p "Enter the name for the encrypted file: " output_file
-
-    if [ -f "$output_file" ]; then
-        echo "Error: Output file already exists."
-        return
-    fi
-
-    if [ ! -f "public.pem" ]; then
-        echo "Error: public.pem does not exist."
-        echo "Please generate the keys using Option 3."
-        return
-    fi
-
-    openssl pkeyutl -encrypt -pubin -inkey public.pem -in "$input_file" -out "$output_file"
-
-    if [ $? -eq 0 ]; then
-        echo "Asymmetric encryption successful."
-        echo "Encrypted file: $output_file"
-    else
-        echo "Asymmetric encryption failed."
-    fi
-}
-
-
-
-asymmetric_decrypt() {
-    echo "====== ASYMMETRIC DECRYPTION ======"
-
-    read -p "Enter the encrypted file: " input_file
-
-    if [ ! -f "$input_file" ]; then
-        echo "Error: Encrypted  file does not exist."
-        return
-    fi
-
-    read -p "Enter the name for the decrypted file: " output_file
-
-    if [ -f "$output_file" ]; then
-        echo "Error: Encrypted fie does not exist"
-        return
-    fi
-
-    if [ ! -f "private.pem" ]; then
-        echo "Error: private.pem does not exist."
-        echo "Please generate the keys using Option 3."
-        return
-    fi
-
-    openssl pkeyutl -decrypt -inkey private.pem -in "$input_file" -out "$output_file"
-
-    if [ $? -eq 0 ]; then
-        echo "Asymmetric decryption successful."
-        echo "Decrypted file: $output_file"
-    else
-        echo "Asymmetric decryption failed."
-    fi
-}
-
-hash_file() {
-    echo "========== HASH A FILE =========="
-
-    read -p "Enter the file to hash: " input_file
-
-    if [ ! -f "$input_file" ]; then
-        echo "Error: File does not exist."
-        return
-    fi
-
-    echo "Choose a hashing algorithm:"
-    echo "1. SHA-256"
-    echo "2. SHA-512"
-
-    read -p "Choose an option: " hash_choice
-
-    if [ "$hash_choice" = "1" ]; then
-        sha256sum "$input_file"
-
-    elif [ "$hash_choice" = "2" ]; then
-        sha512sum "$input_file"
-
-    else
-        echo "Error: Invalid hashing option."
-    fi
-}
-
-generate_signature() {
-    echo "== GENERATE DIGITAL SIGNATURE =="
-
-    read -p "Enter the file to sign: " input_file
-
-    if [ ! -f "$input_file" ]; then
-        echo "Error: File does not exist."
-        return
-    fi
-
-    if [ ! -f "private.pem" ]; then
-        echo "Error: private.pem does not exist."
-        echo "Please generate the keys using Option 3."
-        return
-    fi
-
-    read -p "Enter the name for the signature file: " signature_file
-
-    if [ -f "$signature_file" ]; then
-        echo "Error: Signature file already exists."
-        return
-    fi
-
-    openssl dgst -sha256 -sign private.pem -out "$signature_file" "$input_file"
-
-    if [ $? -eq 0 ]; then
-        echo "Digital signature generated successfully."
-        echo "Signature file: $signature_file"
-    else
-        echo "Digital signature generation failed."
-    fi
-}
-
-verify_signature() {
-    echo "=== VERIFY DIGITAL SIGNATURE =========="
-
-    read -p "Enter the original file: " input_file
-
-    if [ ! -f "$input_file" ]; then
-        echo "Error: Original file does not exist."
-        return
-    fi
-
-    read -p "Enter the signature file: " signature_file
-
-    if [ ! -f "$signature_file" ]; then
-        echo "Error: Signature file does not exist."
-        return
-    fi
-
-    if [ ! -f "public.pem" ]; then
-        echo "Error: public.pem does not exist."
-        echo "Please generate the keys using Option 3."
-        return
-    fi
-
-    openssl dgst -sha256 -verify public.pem -signature "$signature_file" "$input_file"
-
-    if [ $? -eq 0 ]; then
-        echo "Signature verification completed."
-    else
-        echo "Signature verification failed."
-    fi
-}
-
 
 while true
 do
 
-echo "================================"
-echo "   CRYPTOGRAPHY TOOLKT"
-echo "==========================="
-echo "1. Symmetric Encryption"
-echo "2. Symmetric Decryption"
-echo "3. Generate RSA Keys"
-echo "4. Asymmetric Encryption"
-echo "5. Asymmetric Decryption"
-echo "6. Hash a File"
-echo "7. Digital Signature"
-echo "8. Verify Signature"
-echo "9. Exit"
-echo "============================="
-echo "Thank You!"
+ echo "================================"
+ echo "      CRYPTOGRAPHY TOOLKIT"
+ echo "================================"
+  echo "1. Create a File"
+  echo "2. Symmetric Encryption"
+  echo "3. Symmetric Decryption"
+  echo "4. Generate RSA Keys"
+  echo "5. Asymmetric Encryption"
+  echo "6. Asymmetric Decryption"
+  echo "7. Hash a File"
+  echo "8. Generate Digital Signature"
+  echo "9. Verify Digital Signature"
+  echo "10. Exit"
+  echo "================================"
+
+    read -p "Choose an option: " choice
 
 
-read -p "Choose an option: " choice
+  if [ "$choice" = "1" ]; then
+	echo "-----CREATE A FILE-----"
 
-if [ "$choice" = "1" ]; then
-	symmetric_encrypt
+  read -p "Enter file name: " file_name
+	if [ -f "$file_name" ]; then
+	echo "Erro File already exists"
+  else
+	touch "$file_name"
+	if [ -f "$file_name" ]; then
+	echo "file created"
+  else
+	echo "file creation failed"
+  fi
+  fi
+
+ elif [ "$choice" = "2" ]; then
+
+	echo "-----Symmetric Encryption--------"
+	read -p "Enter the file to encrypt: " input_file
+
+	if [ -f "$input_file" ]; then
+
+        read -p "Enter the name for encrypted file: " output_file
+
+ 	if [ -f "$output_file" ]; then
+	echo "Error: Output file already exists."
+
+	else
+    if  openssl enc  -aes-256-cbc -pbkdf2 -iter 1000 -in "$input_file"  -out "$output_file"; then
+
+	echo "Encryption seccessful."
+	echo "Encryption file: $output_file"
+  else
+	echo "Encryption failed"
+  fi
+fi
+else
+echo "Error: Input file does not exist."
 fi
 
-if [ "$choice" = "2" ]; then
-    symmetric_decrypt
+
+elif [ "$choice" = "3" ]; then
+
+        echo "-----Symmetric Decryption--------"
+        read -p "Enter the encrypted file: " input_file
+
+        if [ -f "$input_file" ]; then
+
+        read -p "Enter the name for decrypted file: " output_file
+
+        if [ -f "$output_file" ]; then
+        echo "Error: Output file already exists."
+
+        else
+    if  openssl enc -d  -aes-256-cbc -pbkdf2 -iter 1000 -in "$input_file"  -out "$output_file"; then
+
+        echo "Decryption seccessful."
+        echo "Decryption file: $output_file"
+  else
+        echo "Decryption failed"
+  fi
+fi
+else
+ echo "Error: Encrypted file does not exist."
 fi
 
-if [ "$choice" = "3" ]; then
-    generate_keys
+
+elif [ "$choice" = "4" ]; then
+
+        echo "-----Generate RSA Keys--------"
+        read -p "Enter name for private key: " private_key
+	read -p "Enter name for public  key: " public_key
+
+
+        if [ -f "$private_key" ]; then
+	echo "Error: Private key file already exists"
+
+	elif [ -f "$public_key" ]; then
+	echo "Erro: Public key file already exists"
+
+	else 
+	if openssl genrsa -out "$private_key" 2048; then
+	  
+         echo "Private key generated successfully."
+	
+	if openssl rsa -in "$private_key" -pubout -out "$public_key"; then
+	echo "public key successfully generated."
+	echo "private_key: $private_key"
+	echo "public_key: $public_key"
+   else
+	echo "Error: public key generation failed."
+   fi
+
+
+   else 
+    echo "Error: Private key generation failed"
+ fi
 fi
 
-if [ "$choice" = "4" ]; then
-    asymmetric_encrypt
+
+elif [ "$choice" = "5" ]; then
+
+        echo "-----Assymmetric Encryption--------"
+        read -p "Enter the file to encrypt: " input_file
+
+        if [ -f "$input_file" ]; then
+	
+	read -p "Enter the public key file: " public_key
+
+	if [ -f "$public_key" ]; then
+	
+	read -p "Enter the name for the encrypted file: " output_file
+
+	if [ -f "$output_file" ]; then
+          echo "Error: Output file already exists."
+	else
+
+
+      if openssl pkeyutl -encrypt -pubin -inkey "$public_key" -in "$input_file" -out "$output_file"; then
+
+
+        echo "Encryption successful."
+        echo "Encrypted file: $output_file"
+  else
+        echo "Encryption failed"
+  fi
+fi
+else
+	echo "Error: public key file does not exist."
+
 fi
 
-if [ "$choice" = "5" ]; then
-    asymmetric_decrypt
-fi
-
-if [ "$choice" = "6" ]; then
-    hash_file
-fi
-
-if [ "$choice" = "7" ]; then
-    generate_signature
-fi
-
-if [ "$choice" = "8" ]; then
-    verify_signature
+ else
+    echo "Error: Input file does not exist."
 fi
 
 
-if [ "$choice" = "9" ]; then
-          echo "Exiting Crypto Toolkit..."
+elif [ "$choice" = "6" ]; then
 
-	exit
+        echo "-----Assymmetric Decryption--------"
+        read -p "Enter the file to decrypt: " input_file
+
+        if [ -f "$input_file" ]; then
+        
+        read -p "Enter the private key file: " private_key
+
+        if [ -f "$private_key" ]; then
+        
+        read -p "Enter the name for the decrypted file: " output_file
+
+        if [ -f "$output_file" ]; then
+          echo "Error: Output file already exists."
+        else
+
+
+      if openssl pkeyutl -decrypt  -inkey "$private_key" -in "$input_file" -out "$output_file"; then
+
+
+        echo "Decryption successful."
+        echo "Decrypted file: $output_file"
+  else
+        echo "Decryption failed"
+  fi
 fi
+else
+        echo "Error: private key file does not exist."
+
+fi
+
+ else
+    echo "Error: Encrypted does not exist."
+fi
+
+
+elif [ "$choice" = "7" ]; then
+
+        echo "-----Hash A File--------"
+        read -p "Enter the file to hash: " input_file
+
+        if [ -f "$input_file" ]; then
+
+	echo "1. SHA-256"
+        echo "2. SHA-512"
+	read -p "Choose a hashing algorithm: " hash_choice
+
+	if [ "$hash_choice" = "1" ]; then
+            sha256sum "$input_file"
+
+	elif [ "$hash_choice" = "2" ]; then
+            sha512sum "$input_file"
+	else
+	  echo "Error: Invalid hashing option"
+	fi
+	
+	else
+	 echo "Error: File does not exist"
+	fi
+
+elif [ "$choice" = "8" ]; then
+
+        echo "-----Digital Signature--------"
+        read -p "Enter the file to sign: " input_file
+
+        if [ -f "$input_file" ]; then
+        
+        read -p "Enter the private key file: " private_key
+
+        if [ -f "$private_key" ]; then
+        
+        read -p "Enter the name for the signature file: " signature_file
+
+        if [ -f "$signature_file" ]; then
+          echo "Error: signature file already exists."
+        else
+	if openssl dgst -sha256 -sign "$private_key" -out "$signature_file" "$input_file"; then
+               
+
+ echo "Digital signature created successfully."
+        echo "Signature file: $signature_file"
+          else
+         echo "Digital signature creation failed."
+     fi
+    fi
+	else 
+	echo "error: Private key file does not exist."
+	fi
+	else
+	echo "Error: file to sign does not exists"
+	fi
+
+
+elif [ "$choice" = "9" ]; then
+
+        echo "-----Verify Signature--------"
+        read -p "Enter the original file: " input_file
+
+        if [ -f "$input_file" ]; then
+        
+        read -p "Enter the signature file: " signature_file
+
+        if [ -f "$signature_file" ]; then
+        
+        read -p "Enter the public key file: " public_key
+
+        if [ -f "$public_key" ]; then
+	
+	
+        if  openssl dgst -sha256 -verify "$public_key" -signature "$signature_file" "$input_file"; then
+	
+               
+        echo "signature verify  successfully."
+          else
+         echo "signature verification failed."
+    fi
+        else 
+        echo "error: Public key file does not exist."
+        fi
+        else
+        echo "Error: signature file does not exist"
+        fi
+fi
+
+
+
+  elif [ "$choice" = "10" ]; then
+  echo "Thank you! You just exit cryptography toolkit." 
+	 exit
+  fi
 done
+
+
+
+
+
+
+
+
+
